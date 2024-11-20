@@ -1,0 +1,14 @@
+apiVersion: v1
+entries:
+  medplum:
+  - apiVersion: v2
+    appVersion: 1.16.0
+    created: "2024-11-20T17:30:48.286119749Z"
+    description: A Helm chart for Kubernetes
+    digest: c7a7e26494b4d0f7a6c916618b1d696ecb408828e832c2413816f9bb858dd7a6
+    name: medplum
+    type: application
+    urls:
+    - https://github.com/pablorussomc/pablo-test/releases/download/medplum-0.1.1/medplum-0.1.1.tgz
+    version: 0.1.1
+generated: "2024-11-20T17:30:48.286130249Z"
