@@ -7,8 +7,9 @@ metadata:
   labels:
     {{- include "medplum.labels" . | nindent 4 }}
 spec:
-  sslPolicy: "medplum-ssl-policy"
+  sslPolicy: {{ .Values.gcp.frontendConfig.sslPolicyName | default "medplum-ssl-policy" | quote }}
   redirectToHttps:
-    enabled: true
+    enabled: {{ .Values.gcp.frontendConfig.redirectToHttps | default true }}
     responseCodeName: MOVED_PERMANENTLY_DEFAULT
 {{- end }}
+
