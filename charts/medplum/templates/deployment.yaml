@@ -1,3 +1,4 @@
+{{- include "medplum.validateAll" . -}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -59,9 +60,11 @@ spec:
               port: {{ .Values.service.targetPort | default 8103 }}
           resources:
             limits:
-              memory: "512Mi"
+              cpu: {{ .Values.deployment.resources.limits.cpu | default "500m" }}
+              memory: {{ .Values.deployment.resources.limits.memory | default "512Mi" }}
             requests:
-              memory: "256Mi"
+              cpu: {{ .Values.deployment.resources.requests.cpu | default "250m" }}
+              memory: {{ .Values.deployment.resources.requests.memory | default "256Mi" }}
           {{- with .Values.volumeMounts }}
           volumeMounts:
             {{- toYaml . | nindent 12 }}
@@ -82,3 +85,6 @@ spec:
       tolerations:
         {{- toYaml . | nindent 8 }}
       {{- end }}
+
+
+

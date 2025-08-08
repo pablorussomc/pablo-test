@@ -1,26 +1,28 @@
-{{- if and (eq .Values.global.cloudProvider "gcp") (eq .Values.ingress.deploy true) }}
+{{- if include "medplum.shouldDeployGCPIngress" . }}
 apiVersion: cloud.google.com/v1
 kind: BackendConfig
 metadata:
-  name: medplum-backendconfig
+  name: {{ .Values.gcp.backendConfig.name | default "medplum-backendconfig" }}
   namespace: {{ include  "medplum.namespace" . }}
   labels:
     {{- include "medplum.labels" . | nindent 4 }}
 spec:
   securityPolicy:
-    name: ingress-security-policy
+    name: {{ .Values.gcp.backendConfig.securityPolicyName | default "ingress-security-policy" }}
   cdn:
-    enabled: true
+    enabled: {{ .Values.gcp.backendConfig.cdnEnabled | default true }}
     cachePolicy:
       includeHost: true
   healthCheck:
-    checkIntervalSec: 30
-    timeoutSec: 10
-    healthyThreshold: 1
-    unhealthyThreshold: 3
+    checkIntervalSec: {{ .Values.gcp.backendConfig.healthCheck.checkIntervalSec | default 30 }}
+    timeoutSec: {{ .Values.gcp.backendConfig.healthCheck.timeoutSec | default 10 }}
+    healthyThreshold: {{ .Values.gcp.backendConfig.healthCheck.healthyThreshold | default 1 }}
+    unhealthyThreshold: {{ .Values.gcp.backendConfig.healthCheck.unhealthyThreshold | default 3 }}
     type: HTTP
-    requestPath: /healthcheck 
+    requestPath: {{ .Values.gcp.backendConfig.healthCheck.requestPath | default "/healthcheck" }}
   logging:
     enable: true
     sampleRate: 0.5
 {{- end }}
+
+
