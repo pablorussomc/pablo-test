@@ -30,8 +30,13 @@ deployment:
 
   autoscaling:
     enabled: true
+    minReplicas: 1
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 80
+    targetMemoryUtilizationPercentage: 70
 
 ingress:
   deploy: true
   domain: [MY_DOMAIN] # Your domain name
   
+
