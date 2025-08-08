@@ -1,4 +1,4 @@
-{{- if and (eq .Values.global.cloudProvider "gcp") (eq .Values.ingress.deploy true) }}
+{{- if include "medplum.shouldDeployGCPIngress" . }}
 apiVersion: cloud.google.com/v1
 kind: BackendConfig
 metadata:
