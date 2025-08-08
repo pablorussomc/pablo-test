@@ -14,20 +14,27 @@ spec:
   minReplicas: {{ .Values.deployment.autoscaling.minReplicas | default 1 }}
   maxReplicas: {{ .Values.deployment.autoscaling.maxReplicas | default 10 }}
   metrics:
-    {{- if .Values.deployment.autoscaling.targetCPUUtilizationPercentage }}
+    {{- $cpuThreshold := .Values.deployment.autoscaling.targetCPUUtilizationPercentage | default 80 }}
+    {{- $memoryThreshold := .Values.deployment.autoscaling.targetMemoryUtilizationPercentage | default 70 }}
+    {{- if or $cpuThreshold $memoryThreshold }}
+    {{- if $cpuThreshold }}
     - type: Resource
       resource:
         name: cpu
         target:
           type: Utilization
-          averageUtilization: {{ .Values.deployment.autoscaling.targetCPUUtilizationPercentage | default 80 }}
+          averageUtilization: {{ $cpuThreshold }}
     {{- end }}
-    {{- if .Values.deployment.autoscaling.targetMemoryUtilizationPercentage }}
+    {{- if $memoryThreshold }}
     - type: Resource
       resource:
         name: memory
         target:
           type: Utilization
-          averageUtilization: {{ .Values.deployment.autoscaling.targetMemoryUtilizationPercentage | default 80 }}
+          averageUtilization: {{ $memoryThreshold }}
+    {{- end }}
+    {{- else }}
+    {{- fail "HPA requires at least one metric (CPU or Memory utilization threshold)" }}
     {{- end }}
 {{- end }}
+
