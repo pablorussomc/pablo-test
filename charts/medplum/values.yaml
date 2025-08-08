@@ -1,42 +1,223 @@
-# Default values for medplum.
-# This is a YAML-formatted file.
-# Declare variables to be passed into your templates.
+# Default values for Medplum Helm Chart
+# This is a YAML-formatted file that declares variables to be passed into your templates.
+# 
+# Medplum is a healthcare platform that provides FHIR-compliant APIs and tools
+# for building healthcare applications. This chart deploys the Medplum server
+# on Kubernetes with support for Google Cloud Platform services.
+
+# =============================================================================
+# GLOBAL CONFIGURATION
+# =============================================================================
 
 global:
-  cloudProvider: gcp # Supported values: gcp. # roadmap: aws, azure
+  # Cloud provider configuration
+  # Currently supported: gcp (Google Cloud Platform)
+  # Roadmap: aws (Amazon Web Services), azure (Microsoft Azure)
+  cloudProvider: gcp
+  
+  # Google Cloud Platform specific configuration
+  # Required when cloudProvider is set to "gcp"
   gcp:
-    projectId: [MY_PROJECT_ID] # Your Google Cloud Platform project ID
-    secretId: [MY_CONFIG_SECRET_ID] # The secret ID for configuration in Google Cloud Platform
- 
-serviceAccount: 
-  annotations:
-    iam.gke.io/gcp-service-account: [MY_GCP_SERVICE_ACCOUNT] # Your Google Cloud Platform service account e.i: medplum-server@[MY_PROJECT_ID].iam.gserviceaccount.com
+    # Your Google Cloud Platform project ID where resources will be created
+    # Example: "my-healthcare-project-123456"
+    # This is required for GCP deployments
+    projectId: ""
+    
+    # Google Secret Manager secret ID containing Medplum server configuration
+    # This secret should contain your Medplum server configuration JSON
+    # Example: "medplum-server-config"
+    # This is required for GCP deployments
+    secretId: ""
 
+# =============================================================================
+# KUBERNETES CONFIGURATION
+# =============================================================================
+
+# Kubernetes namespace where Medplum resources will be deployed
+# Default: "medplum"
 namespace: medplum
 
-deployment:
-  replicaCount: 1
-  image:
-    repository: medplum/medplum-server
-    tag: "" # Uses Chart.AppVersion when empty
+# Service Account configuration
+# Required for GCP Workload Identity integration
+serviceAccount:
+  # Whether to create a service account (automatically set to true for GCP)
+  create: true
+  
+  # Annotations for the service account
+  # For GCP: Required for Workload Identity integration
+  annotations:
+    # GCP service account email for Workload Identity
+    # Format: SERVICE_ACCOUNT_NAME@PROJECT_ID.iam.gserviceaccount.com
+    # Example: "medplum-server@my-project-123456.iam.gserviceaccount.com"
+    iam.gke.io/gcp-service-account: ""
 
+# =============================================================================
+# APPLICATION DEPLOYMENT
+# =============================================================================
+
+deployment:
+  # Number of replicas when autoscaling is disabled
+  # When autoscaling is enabled, this value is ignored
+  replicaCount: 1
+  
+  # Container image configuration
+  image:
+    # Medplum server Docker image repository
+    repository: medplum/medplum-server
+    
+    # Image tag to use
+    # Leave empty to use Chart.AppVersion (recommended for production)
+    # Example: "3.1.4" for a specific version
+    tag: ""
+    
+    # Image pull policy
+    pullPolicy: IfNotPresent
+  
+  # Container resource limits and requests
+  # These values provide a good starting point for most deployments
   resources:
     limits:
+      # Maximum CPU the container can use
+      # 500m = 0.5 CPU cores
       cpu: "500m"
+      
+      # Maximum memory the container can use
       memory: "512Mi"
     requests:
+      # CPU requested for scheduling (guaranteed)
+      # 250m = 0.25 CPU cores
       cpu: "250m"
+      
+      # Memory requested for scheduling (guaranteed)
       memory: "256Mi"
-
+  
+  # Horizontal Pod Autoscaler (HPA) configuration
+  # Automatically scales pods based on CPU and memory utilization
   autoscaling:
+    # Enable/disable autoscaling
     enabled: true
+    
+    # Minimum number of replicas
     minReplicas: 1
+    
+    # Maximum number of replicas
     maxReplicas: 10
+    
+    # Target CPU utilization percentage for scaling
+    # Scale up when average CPU usage exceeds this threshold
     targetCPUUtilizationPercentage: 80
+    
+    # Target memory utilization percentage for scaling
+    # Scale up when average memory usage exceeds this threshold
     targetMemoryUtilizationPercentage: 70
 
-ingress:
-  deploy: true
-  domain: [MY_DOMAIN] # Your domain name
+# =============================================================================
+# NETWORKING CONFIGURATION
+# =============================================================================
+
+# Kubernetes Service configuration
+service:
+  # Service type (ClusterIP for internal access, LoadBalancer for external)
+  type: ClusterIP
   
+  # Service port (external port)
+  port: 80
+  
+  # Target port on the container
+  targetPort: 8103
+
+# Ingress configuration for external access
+# Currently supports Google Cloud Load Balancer integration
+ingress:
+  # Whether to deploy ingress resources
+  deploy: true
+  
+  # Domain name for the Medplum server
+  # Example: "medplum.example.com"
+  # This is required when ingress.deploy is true
+  domain: ""
+  
+  # Additional ingress annotations (optional)
+  annotations: {}
+
+# =============================================================================
+# GCP-SPECIFIC CONFIGURATION
+# =============================================================================
+# The following configurations are specific to Google Cloud Platform
+# and are only used when global.cloudProvider is set to "gcp"
+
+gcp:
+  # Backend configuration for Google Cloud Load Balancer
+  backendConfig:
+    # Name of the BackendConfig resource
+    name: "medplum-backendconfig"
+    
+    # Security policy name for Cloud Armor
+    securityPolicyName: "ingress-security-policy"
+    
+    # Enable CDN for static content
+    cdnEnabled: true
+    
+    # Health check configuration
+    healthCheck:
+      checkIntervalSec: 30
+      timeoutSec: 10
+      healthyThreshold: 1
+      unhealthyThreshold: 3
+      requestPath: "/healthcheck"
+  
+  # Frontend configuration for SSL and redirects
+  frontendConfig:
+    # SSL policy name
+    sslPolicyName: "medplum-ssl-policy"
+    
+    # Enable HTTPS redirect
+    redirectToHttps: true
+  
+  # Managed SSL certificate configuration
+  managedCertificate:
+    # Whether to create a managed SSL certificate
+    enabled: true
+
+# =============================================================================
+# ADVANCED CONFIGURATION
+# =============================================================================
+
+# Pod-level security context (optional)
+podSecurityContext: {}
+  # fsGroup: 2000
+
+# Container-level security context (optional)
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+# Node selector for pod scheduling (optional)
+nodeSelector: {}
+
+# Tolerations for pod scheduling (optional)
+tolerations: []
+
+# Affinity rules for pod scheduling (optional)
+affinity: {}
+
+# Additional pod annotations (optional)
+podAnnotations: {}
+
+# Additional pod labels (optional)
+podLabels: {}
+
+# Volume mounts (optional)
+volumeMounts: []
+
+# Volumes (optional)
+volumes: []
+
+# Image pull secrets (optional)
+imagePullSecrets: []
+
 
