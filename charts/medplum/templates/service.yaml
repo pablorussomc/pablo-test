@@ -5,7 +5,7 @@ metadata:
   namespace: {{ include "medplum.namespace" . }}
   annotations:
     cloud.google.com/neg: '{"ingress": true}'
-    cloud.google.com/backend-config: '{"default": "medplum-backendconfig"}'
+    cloud.google.com/backend-config: '{"default": "{{ .Values.gcp.backendConfig.name | default "medplum-backendconfig" }}"}'
   labels:
     {{- include "medplum.labels" . | nindent 4 }}
 spec:
@@ -17,3 +17,4 @@ spec:
       targetPort: {{ .Values.service.targetPort | default 8103 }}
   selector:
     {{- include "medplum.selectorLabels" . | nindent 4 }}
+
